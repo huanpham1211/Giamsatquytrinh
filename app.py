@@ -256,7 +256,7 @@ def generate_word_report_with_charts(step_summary, success_distribution, dept_re
 
 
 # ---- Streamlit UI ----
-st.title("📊 Báo cáo Xác thực Người bệnh & Thực hiện Quy trình")
+st.title("📊 Báo cáo tóm tắt Giám sát điều dưỡng & Thực hiện Quy trình")
 
 # File uploader
 uploaded_file = st.file_uploader("📂 Tải lên file Excel", type=["xlsx"])
