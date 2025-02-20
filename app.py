@@ -47,12 +47,13 @@ def process_excel(file):
         "< 50% Đạt": (df["SuccessRate"] <= 50).mean() * 100
     })
 
-    # Identify top 5 mistakes (Modify to calculate real percentage)
+    # Identify top 5 mistakes (Convert to real percentage)
     total_records = len(df)
-    mistake_counts = df.groupby("Khoa đánh giá")[df.columns[5:11]].apply(lambda x: (x != "có").sum()).sum()
+    mistake_counts = df[standard_columns[5:11]].apply(lambda x: (x != "có").sum())  # Count non-"Có" responses
     top_5_mistakes = (mistake_counts.nlargest(5) / total_records) * 100  # Convert to real percentage
 
     return step_summary, success_distribution, dept_report, top_5_mistakes, total_records
+
 
 def format_header_text(cell, text):
     paragraph = cell.paragraphs[0]
