@@ -70,7 +70,7 @@ def add_heading(doc, text):
     run.font.size = Pt(13)  # Adjust heading size if needed
     paragraph.alignment = 0  # Align to left (default)
 
-def generate_word_report_with_charts(step_summary, success_distribution, dept_report, top_5_mistakes):
+def generate_word_report_with_charts(step_summary, success_distribution, dept_report, top_5_mistakes, total_records):
     doc = Document()
     style = doc.styles['Normal']
     style.font.name = 'Times New Roman'
