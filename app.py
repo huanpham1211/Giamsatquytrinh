@@ -177,7 +177,6 @@ def generate_word_report_with_charts(step_summary, success_distribution, dept_re
 
      # **4th Chart: Top 5 Common Mistakes (Using real percentages)**
     # Calculate real percentage of mistakes
-    total_records = len(df)
     top_5_mistakes_percentage = (top_5_mistakes / total_records) * 100
     
     fig, ax = plt.subplots(figsize=(6, 4))
