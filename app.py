@@ -11,6 +11,9 @@ from io import BytesIO
 import datetime
 import re
 
+st.set_page_config(page_title="Báo cáo giám sát", page_icon="👨‍⚕️")
+
+
 def normalize_text(text):
     if isinstance(text, str):
         return text.strip().lower().replace("đạt", "đạt").replace("có", "có")
@@ -38,10 +41,10 @@ def process_excel(file):
     # Success distribution
     df["SuccessRate"] = df[step_columns].apply(lambda row: (row == "đạt").mean() * 100, axis=1).round(1)
     success_distribution = pd.Series({
-        "> 90% Đạt": (df["SuccessRate"] > 90).mean() * 100,
-        "71-90% Đạt": ((df["SuccessRate"] > 70) & (df["SuccessRate"] <= 90)).mean() * 100,
-        "50-70% Đạt": ((df["SuccessRate"] > 50) & (df["SuccessRate"] <= 70)).mean() * 100,
-        "< 50% Đạt": (df["SuccessRate"] <= 50).mean() * 100
+        "Tốt: > 90%": (df["SuccessRate"] > 90).mean() * 100,
+        "Khá: ≥ 70-90%": ((df["SuccessRate"] > 70) & (df["SuccessRate"] <= 90)).mean() * 100,
+        "Trung bình: ≥ 50-70%": ((df["SuccessRate"] > 50) & (df["SuccessRate"] <= 70)).mean() * 100,
+        "Kém: < 50%": (df["SuccessRate"] <= 50).mean() * 100
     })
 
     # Identify top 5 mistakes
@@ -83,42 +86,46 @@ def generate_word_report_with_charts(step_summary, success_distribution, dept_re
     doc.add_paragraph("- Số lượt giám sát quy trình: ____________________")
     add_heading(doc, "II. KẾT QUẢ GIÁM SÁT:")
 
-    # **1st Chart: Tỷ lệ đạt từng bước**
+    # **1st Chart: Tỷ lệ đạt từng bước (Horizontal Bar Chart with Correct Step Extraction)**
     fig, ax = plt.subplots(figsize=(6, 4))
     colors = sns.color_palette("husl", len(step_summary))
-    bars = step_summary.plot(kind="bar", ax=ax, color=colors)
-
+    bars = step_summary.sort_values().plot(kind="barh", ax=ax, color=colors)
+    
     # Extract dynamic labels (Bước X)
     extracted_labels = [re.search(r"Bước \d+", col) for col in step_summary.index]
-    extracted_labels = [match.group(0) if match else col for match, col in zip(extracted_labels, step_summary.index)]
-
-    ax.set_xticks(range(len(step_summary)))
-    ax.set_xticklabels(extracted_labels, rotation=0, fontsize=10)
+    extracted_labels = [match.group(0) if match else col for match in extracted_labels]
+    
+    ax.set_yticks(range(len(step_summary)))
+    ax.set_yticklabels(extracted_labels, fontsize=10)
+    ax.set_xlabel("Tỷ lệ (%)")
+    ax.set_ylabel("Bước")
     ax.set_title("Biểu đồ: Tỷ lệ đạt từng bước")
-
-    # Remove legend & add labels above bars
+    
+    # Remove legend & add labels inside bars
     ax.legend().remove()
     for bar, label in zip(bars.patches, extracted_labels):
-        height = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width() / 2, height + 2, f"{height:.1f}%", 
-                ha="center", fontsize=10, color="black")
-
+        width = bar.get_width()
+        ax.text(width + 1, bar.get_y() + bar.get_height()/2, f"{width:.1f}%", 
+                ha="left", va="center", fontsize=10, color="black")
+    
     img_chart1 = BytesIO()
     plt.savefig(img_chart1, format="png", bbox_inches="tight")
     img_chart1.seek(0)
     doc.add_paragraph("\nBiểu đồ: Tỷ lệ đạt từng bước\n", style='Heading 3')
     doc.add_picture(img_chart1, width=Inches(6))
-
+    
     # **1st Table: Percentage of Bước đạt**
     doc.add_paragraph("\nBảng: Percentage of Bước đạt\n", style='Heading 3')
     table = doc.add_table(rows=len(step_summary) + 1, cols=2)
     table.cell(0, 0).text = "Bước"
     table.cell(0, 1).text = "Tỷ lệ (%)"
-
-    for key, value in zip(extracted_labels, step_summary.values):
+    
+    for key, value in zip(extracted_labels, step_summary.sort_values().values):
         row_cells = table.add_row().cells
         row_cells[0].text = str(key)
         row_cells[1].text = f"{value:.1f}%"
+
+
 
     # **2nd Chart: Phân bố nhân viên đạt tiêu chuẩn**
     fig, ax = plt.subplots(figsize=(6, 4))
@@ -143,52 +150,57 @@ def generate_word_report_with_charts(step_summary, success_distribution, dept_re
         row_cells[0].text = str(key)
         row_cells[1].text = f"{value:.1f}%"
 
-    # **3rd Chart: Tỷ lệ đạt theo khoa**
+    # **3rd Chart: Tỷ lệ đạt theo khoa (With percentage labels on bars)**
     fig, ax = plt.subplots(figsize=(8, 5))
     dept_report.plot(kind='bar', ax=ax, color=['#1f77b4', '#ff7f0e'])
+    
     ax.set_title("Biểu đồ: Tỷ lệ đạt theo khoa")
     ax.set_xlabel("Khoa đánh giá")
     ax.set_ylabel("Tỷ lệ (%)")
     ax.set_xticklabels(dept_report.index, rotation=45, ha="right")
-
+    
+    # Add percentage labels on bars
+    for bar in ax.patches:
+        height = bar.get_height()
+        if height > 0:
+            ax.text(bar.get_x() + bar.get_width()/2, height + 1, f"{height:.1f}%", 
+                    ha="center", fontsize=10, color="black")
+    
     img_chart3 = BytesIO()
     plt.savefig(img_chart3, format="png", bbox_inches="tight")
     img_chart3.seek(0)
     doc.add_paragraph("\nBiểu đồ: Tỷ lệ đạt theo khoa\n", style='Heading 3')
     doc.add_picture(img_chart3, width=Inches(6))
 
-    # **3rd Table: Bảng Tỷ lệ đạt theo khoa**
-    doc.add_paragraph("\nBảng: Tỷ lệ đạt theo khoa\n", style='Heading 3')
-    table = doc.add_table(rows=dept_report.shape[0] + 1, cols=3)
-    table.cell(0, 0).text = "Khoa đánh giá"
-    table.cell(0, 1).text = "Tỷ lệ Có (%)"
-    table.cell(0, 2).text = "Tỷ lệ Đạt (%)"
-
-    for i, row in dept_report.iterrows():
-        row_cells = table.add_row().cells
-        row_cells[0].text = str(i)
-        row_cells[1].text = f"{row['Tỷ lệ Có (%)']:.1f}%"
-        row_cells[2].text = f"{row['Tỷ lệ Đạt (%)']:.1f}%"
-
-    # **4th Chart: Top 5 Common Mistakes**
+     # **4th Chart: Top 5 Common Mistakes (Using real percentages)**
+    # Calculate real percentage of mistakes
+    total_records = len(df)
+    top_5_mistakes_percentage = (top_5_mistakes / total_records) * 100
+    
     fig, ax = plt.subplots(figsize=(6, 4))
-    top_5_mistakes.plot(kind="barh", ax=ax, color="red")
-    ax.set_title("Biểu đồ: Top 5 Sai sót phổ biến nhất")
+    top_5_mistakes_percentage.plot(kind="barh", ax=ax, color="red")
+    
     ax.set_xlabel("Tỷ lệ (%)")
-
+    ax.set_title("Biểu đồ: Top 5 Sai sót phổ biến nhất")
+    
+    # Add percentage labels on bars
+    for bar in ax.patches:
+        ax.text(bar.get_width() + 1, bar.get_y() + bar.get_height()/2, f"{bar.get_width():.1f}%", 
+                ha="left", va="center", fontsize=10, color="black")
+    
     img_chart4 = BytesIO()
     plt.savefig(img_chart4, format="png", bbox_inches="tight")
     img_chart4.seek(0)
     doc.add_paragraph("\nBiểu đồ: Top 5 Sai sót phổ biến nhất\n", style='Heading 3')
     doc.add_picture(img_chart4, width=Inches(6))
 
-    # **4th Table: Top 5 Common Mistakes**
+    # **4th Table: Top 5 Common Mistakes with Real Percentages**
     doc.add_paragraph("\nBảng: Top 5 Sai sót phổ biến nhất\n", style='Heading 3')
-    table = doc.add_table(rows=len(top_5_mistakes) + 1, cols=2)
+    table = doc.add_table(rows=len(top_5_mistakes_percentage) + 1, cols=2)
     table.cell(0, 0).text = "Hạng mục"
     table.cell(0, 1).text = "Tỷ lệ (%)"
-
-    for key, value in top_5_mistakes.items():
+    
+    for key, value in top_5_mistakes_percentage.items():
         row_cells = table.add_row().cells
         row_cells[0].text = str(key)
         row_cells[1].text = f"{value:.1f}%"
