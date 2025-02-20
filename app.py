@@ -41,17 +41,19 @@ def process_excel(file):
     # Success distribution
     df["SuccessRate"] = df[step_columns].apply(lambda row: (row == "đạt").mean() * 100, axis=1).round(1)
     success_distribution = pd.Series({
-        "Tốt: > 90%": (df["SuccessRate"] > 90).mean() * 100,
-        "Khá: ≥ 70-90%": ((df["SuccessRate"] > 70) & (df["SuccessRate"] <= 90)).mean() * 100,
-        "Trung bình: ≥ 50-70%": ((df["SuccessRate"] > 50) & (df["SuccessRate"] <= 70)).mean() * 100,
-        "Kém: < 50%": (df["SuccessRate"] <= 50).mean() * 100
+        "> 90% Đạt": (df["SuccessRate"] > 90).mean() * 100,
+        "71-90% Đạt": ((df["SuccessRate"] > 70) & (df["SuccessRate"] <= 90)).mean() * 100,
+        "50-70% Đạt": ((df["SuccessRate"] > 50) & (df["SuccessRate"] <= 70)).mean() * 100,
+        "< 50% Đạt": (df["SuccessRate"] <= 50).mean() * 100
     })
 
-    # Identify top 5 mistakes
+    # Identify top 5 mistakes (Modify to calculate real percentage)
+    total_records = len(df)
     mistake_counts = df.groupby("Khoa đánh giá")[df.columns[5:11]].apply(lambda x: (x != "có").sum()).sum()
-    top_5_mistakes = mistake_counts.nlargest(5)
+    top_5_mistakes = (mistake_counts.nlargest(5) / total_records) * 100  # Convert to real percentage
 
-    return step_summary, success_distribution, dept_report, top_5_mistakes
+    return step_summary, success_distribution, dept_report, top_5_mistakes, total_records
+
 def format_header_text(cell, text):
     paragraph = cell.paragraphs[0]
     paragraph.alignment = 1  # Center align text
