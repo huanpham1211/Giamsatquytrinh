@@ -276,10 +276,10 @@ st.title("📊 Báo cáo tóm tắt Giám sát điều dưỡng & Thực hiện 
 uploaded_file = st.file_uploader("📂 Tải lên file Excel", type=["xlsx"])
 
 if uploaded_file:
-    step_summary, success_distribution, dept_report, top_5_mistakes = process_excel(uploaded_file)
+    step_summary, success_distribution, dept_report, top_5_mistakes, total_records = process_excel(uploaded_file)  # Unpacking 5 values
 
     # Generate Word report
-    word_buffer = generate_word_report_with_charts(step_summary, success_distribution, dept_report, top_5_mistakes)
+    word_buffer = generate_word_report_with_charts(step_summary, success_distribution, dept_report, top_5_mistakes, total_records)
 
     # Provide download button
     st.download_button(
@@ -290,3 +290,4 @@ if uploaded_file:
     )
 
     st.success("✅ Báo cáo đã được tạo thành công!")
+
