@@ -33,7 +33,7 @@ def process_excel(file):
 
     # Compute the overall mean percentage for "Có" and "Đạt" per department
     dept_report = pd.concat([compliance_percent.mean(axis=1), step_percent.mean(axis=1)], axis=1)
-    dept_report.columns = ["Tỷ lệ Có (%)", "Tỷ lệ Đạt (%)"]  # Ensure exactly two columns
+    dept_report.columns = ["Xác thực người bệnh(%)", "Bảng kiểm(%)"]  # Ensure exactly two columns
 
     # Step summary (Percentage of "Đạt")
     step_summary = df[step_columns].apply(lambda x: (x == "đạt").mean() * 100).round(1)
@@ -41,18 +41,23 @@ def process_excel(file):
     # Success distribution
     df["SuccessRate"] = df[step_columns].apply(lambda row: (row == "đạt").mean() * 100, axis=1).round(1)
     success_distribution = pd.Series({
-        "> 90% Đạt": (df["SuccessRate"] > 90).mean() * 100,
-        "71-90% Đạt": ((df["SuccessRate"] > 70) & (df["SuccessRate"] <= 90)).mean() * 100,
-        "50-70% Đạt": ((df["SuccessRate"] > 50) & (df["SuccessRate"] <= 70)).mean() * 100,
-        "< 50% Đạt": (df["SuccessRate"] <= 50).mean() * 100
+        "> 90% Tốt": (df["SuccessRate"] > 90).mean() * 100,
+        "70-90% Khá": ((df["SuccessRate"] > 70) & (df["SuccessRate"] <= 90)).mean() * 100,
+        "50-70% Trung bình": ((df["SuccessRate"] > 50) & (df["SuccessRate"] <= 70)).mean() * 100,
+        "< 50% Kém": (df["SuccessRate"] <= 50).mean() * 100
     })
 
-    # Identify top 5 mistakes (Convert to real percentage)
+     # Identify common mistakes (non-"Có" & non-"Đạt")
     total_records = len(df)
-    mistake_counts = df[standard_columns[5:11]].apply(lambda x: (x != "có").sum())  # Count non-"Có" responses
-    top_5_mistakes = (mistake_counts.nlargest(5) / total_records) * 100  # Convert to real percentage
+    compliance_mistakes = df.iloc[:, 5:11].apply(lambda x: (x != "có").sum())  # Non-"Có" counts
+    step_mistakes = df[step_columns].apply(lambda x: (x != "đạt").sum())  # Non-"Đạt" counts
 
-    return step_summary, success_distribution, dept_report, top_5_mistakes, total_records
+    # Combine and get top 5 mistakes
+    mistake_counts = pd.concat([compliance_mistakes, step_mistakes])
+    top_5_mistakes = mistake_counts.nlargest(5)
+    top_5_mistakes_percentage = (top_5_mistakes / total_records) * 100
+
+    return step_summary, success_distribution, dept_report, top_5_mistakes_percentage, total_records
 
 
 def format_header_text(cell, text):
@@ -143,7 +148,7 @@ def generate_word_report_with_charts(step_summary, success_distribution, dept_re
     doc.add_picture(img_chart2, width=Inches(6))
 
     # **2nd Table: Percentage of Success Rate**
-    doc.add_paragraph("\nBảng: Percentage of Success Rate\n", style='Heading 3')
+    doc.add_paragraph("\nBảng: Phần trăm nhân viên đạt tiêu chuẩn\n", style='Heading 3')
     table = doc.add_table(rows=len(success_distribution) + 1, cols=2)
     table.cell(0, 0).text = "Hạng mục"
     table.cell(0, 1).text = "Tỷ lệ (%)"
@@ -176,11 +181,20 @@ def generate_word_report_with_charts(step_summary, success_distribution, dept_re
     doc.add_picture(img_chart3, width=Inches(6))
 
      # **4th Chart: Top 5 Common Mistakes (Using real percentages)**
-    # Calculate real percentage of mistakes
-    top_5_mistakes_percentage = (top_5_mistakes / total_records) * 100
+    compliance_mistakes_percentage = df.iloc[:, 5:11].apply(lambda x: (x != "có").mean() * 100)
+
+    # Compute percentage of non-"Đạt" responses for step columns (from column 12 onwards)
+    step_mistakes_percentage = df[step_columns].apply(lambda x: (x != "đạt").mean() * 100)
     
+    # Combine both mistake percentages
+    mistake_percentages = pd.concat([compliance_mistakes_percentage, step_mistakes_percentage])
+    
+    # Select the top 5 mistakes with the highest percentage
+    top_5_mistakes_percentage = mistake_percentages.nlargest(5)
+    
+    # Generate the updated chart for Top 5 Mistakes (Now using correct percentages)
     fig, ax = plt.subplots(figsize=(6, 4))
-    top_5_mistakes_percentage.plot(kind="barh", ax=ax, color="red")
+    sns.barplot(y=top_5_mistakes_percentage.index, x=top_5_mistakes_percentage.values, ax=ax, color="red")
     
     ax.set_xlabel("Tỷ lệ (%)")
     ax.set_title("Biểu đồ: Top 5 Sai sót phổ biến nhất")
@@ -190,13 +204,16 @@ def generate_word_report_with_charts(step_summary, success_distribution, dept_re
         ax.text(bar.get_width() + 1, bar.get_y() + bar.get_height()/2, f"{bar.get_width():.1f}%", 
                 ha="left", va="center", fontsize=10, color="black")
     
+    # Save the chart
     img_chart4 = BytesIO()
     plt.savefig(img_chart4, format="png", bbox_inches="tight")
     img_chart4.seek(0)
+    
+    # Generate the updated table for Top 5 Mistakes
+    doc = Document()
     doc.add_paragraph("\nBiểu đồ: Top 5 Sai sót phổ biến nhất\n", style='Heading 3')
     doc.add_picture(img_chart4, width=Inches(6))
-
-    # **4th Table: Top 5 Common Mistakes with Real Percentages**
+    
     doc.add_paragraph("\nBảng: Top 5 Sai sót phổ biến nhất\n", style='Heading 3')
     table = doc.add_table(rows=len(top_5_mistakes_percentage) + 1, cols=2)
     table.cell(0, 0).text = "Hạng mục"
