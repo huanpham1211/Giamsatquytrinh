@@ -25,8 +25,11 @@ def process_excel(file):
 
     # Identify relevant columns
     standard_columns = df.columns[:11].tolist()
-    step_columns = [col for col in df.columns if col not in standard_columns]
-
+    step_columns = [col for col in df.columns if col not in standard_columns][:-1]
+    
+    # Extract rows where "Nhận xét" is not "Đạt"
+    non_dạt_comments = df[df["Nhận xét:"].str.lower() != "đạt"][["Điều dưỡng thực hiện", "Khoa đánh giá", "Nhận xét:"]]
+    
     # Calculate "Đạt" (from step columns) and "Có" (from compliance columns)
     compliance_percent = df.groupby("Khoa đánh giá")[df.columns[5:11]].apply(lambda x: (x == "có").mean() * 100)
     step_percent = df.groupby("Khoa đánh giá")[step_columns].apply(lambda x: (x == "đạt").mean() * 100)
@@ -215,6 +218,11 @@ def generate_word_report_with_charts(step_summary, success_distribution, dept_re
     # Add formatted headings
     add_heading(doc, "III. ĐÁNH GIÁ VÀ NHẬN XÉT:")
     doc.add_paragraph("- Điểm mạnh:\n\n- Điểm cần cải thiện:\n")
+
+    # Add extracted non-Đạt comments
+    doc.add_paragraph("\nCác trường hợp chưa đạt:")
+    for index, row in non_dạt_comments.iterrows():
+        doc.add_paragraph(f"- {row['Điều dưỡng thực hiện']} ({row['Khoa đánh giá']}): {row['Nhận xét:']}", style='List Bullet')
 
     add_heading(doc, "IV. KẾT LUẬN:")
     doc.add_paragraph("- Tóm tắt tình hình:\n")
