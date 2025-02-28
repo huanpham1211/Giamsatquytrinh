@@ -59,7 +59,7 @@ def process_excel(file):
     mistake_percentages = pd.concat([compliance_mistakes_percentage, step_mistakes_percentage])
     top_5_mistakes_percentage = mistake_percentages.nlargest(5)
 
-    return step_summary, success_distribution, dept_report, top_5_mistakes_percentage, total_records
+    return step_summary, success_distribution, dept_report, top_5_mistakes_percentage, total_records, non_dạt_comments
 
 
 def format_header_text(cell, text):
@@ -288,10 +288,10 @@ st.title("📊 Báo cáo tóm tắt Giám sát điều dưỡng & Thực hiện 
 uploaded_file = st.file_uploader("📂 Tải lên file Excel", type=["xlsx"])
 
 if uploaded_file:
-    step_summary, success_distribution, dept_report, top_5_mistakes, total_records = process_excel(uploaded_file)  # Unpacking 5 values
+    step_summary, success_distribution, dept_report, top_5_mistakes, total_records = process_excel(uploaded_file)
 
     # Generate Word report
-    word_buffer = generate_word_report_with_charts(step_summary, success_distribution, dept_report, top_5_mistakes, total_records)
+    word_buffer = generate_word_report_with_charts(step_summary, success_distribution, dept_report, top_5_mistakes, total_records, non_dạt_comments)
 
     # Provide download button
     st.download_button(
