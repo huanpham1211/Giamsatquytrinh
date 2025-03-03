@@ -80,9 +80,15 @@ def add_heading(doc, text):
 
 def generate_word_report_with_charts(step_summary, success_distribution, dept_report, top_5_mistakes_percentage, total_records, non_dạt_comments):
     doc = Document()
-    style = doc.styles['Normal']
-    style.font.name = 'Times New Roman'
-    style.font.size = Pt(13)
+   # Set default style for Normal paragraphs
+    normal_style = doc.styles['Normal']
+    normal_style.font.name = 'Times New Roman'
+    normal_style.font.size = Pt(13)
+    
+    # Update the Heading 3 style to use Times New Roman
+    heading3_style = doc.styles['Heading 3']
+    heading3_style.font.name = 'Times New Roman'
+    heading3_style.font.size = Pt(13)
 
     # Header
     header_table = doc.add_table(rows=1, cols=2)
