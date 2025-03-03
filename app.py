@@ -44,10 +44,10 @@ def process_excel(file):
     # Success distribution
     df["SuccessRate"] = df[step_columns].apply(lambda row: (row == "đạt").mean() * 100, axis=1).round(1)
     success_distribution = pd.Series({
-        "> 90% Tốt": (df["SuccessRate"] > 90).mean() * 100,
-        "70-90% Khá": ((df["SuccessRate"] > 70) & (df["SuccessRate"] <= 90)).mean() * 100,
-        "50-70% Trung bình": ((df["SuccessRate"] > 50) & (df["SuccessRate"] <= 70)).mean() * 100,
-        "< 50% Kém": (df["SuccessRate"] <= 50).mean() * 100
+        "≥90% Tốt": (df["SuccessRate"] > 90).mean() * 100,
+        "≥70 - <90% Khá": ((df["SuccessRate"] > 70) & (df["SuccessRate"] <= 90)).mean() * 100,
+        "≥50 - <70% Trung bình": ((df["SuccessRate"] > 50) & (df["SuccessRate"] <= 70)).mean() * 100,
+        "<50% Kém": (df["SuccessRate"] <= 50).mean() * 100
     })
 
     # Identify top 5 mistakes
