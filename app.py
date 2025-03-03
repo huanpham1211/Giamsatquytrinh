@@ -127,11 +127,11 @@ def generate_word_report_with_charts(step_summary, success_distribution, dept_re
     img_chart1 = BytesIO()
     plt.savefig(img_chart1, format="png", bbox_inches="tight")
     img_chart1.seek(0)
-    doc.add_paragraph("\nBiểu đồ: Tỷ lệ đạt từng bước\n", style='Heading 3')
+    add_heading(doc, "Biểu đồ: Tỷ lệ đạt từng bước")
     doc.add_picture(img_chart1, width=Inches(6))
     
     # **1st Table: Percentage of Bước đạt**
-    doc.add_paragraph("\nBảng: Percentage of Bước đạt\n", style='Heading 3')
+    add_heading(doc, "Bảng: Percentage of Bước đạt")
     table = doc.add_table(rows=len(step_summary) + 1, cols=2)
     table.cell(0, 0).text = "Bước"
     table.cell(0, 1).text = "Tỷ lệ (%)"
@@ -152,11 +152,11 @@ def generate_word_report_with_charts(step_summary, success_distribution, dept_re
     img_chart2 = BytesIO()
     plt.savefig(img_chart2, format="png", bbox_inches="tight")
     img_chart2.seek(0)
-    doc.add_paragraph("\nBiểu đồ: Phân bố nhân viên đạt tiêu chuẩn\n", style='Heading 3')
+    add_heading(doc,"Biểu đồ: Phân bố nhân viên đạt tiêu chuẩn")
     doc.add_picture(img_chart2, width=Inches(6))
 
     # **2nd Table: Percentage of Success Rate**
-    doc.add_paragraph("\nBảng: Phần trăm nhân viên đạt tiêu chuẩn\n", style='Heading 3')
+    add_heading(doc, "Bảng: Phần trăm nhân viên đạt tiêu chuẩn")
     table = doc.add_table(rows=len(success_distribution) + 1, cols=2)
     table.cell(0, 0).text = "Hạng mục"
     table.cell(0, 1).text = "Tỷ lệ (%)"
@@ -185,7 +185,7 @@ def generate_word_report_with_charts(step_summary, success_distribution, dept_re
     img_chart3 = BytesIO()
     plt.savefig(img_chart3, format="png", bbox_inches="tight")
     img_chart3.seek(0)
-    doc.add_paragraph("\nBiểu đồ: Tỷ lệ đạt theo khoa\n", style='Heading 3')
+    add_heading(doc, "Biểu đồ: Tỷ lệ đạt theo khoa")
     doc.add_picture(img_chart3, width=Inches(6))
 
     # **4th Chart: Top 5 Common Mistakes**
@@ -206,11 +206,11 @@ def generate_word_report_with_charts(step_summary, success_distribution, dept_re
     img_chart4.seek(0)
 
     # Add chart to Word document
-    doc.add_paragraph("\nBiểu đồ: Top 5 Sai sót phổ biến nhất\n", style='Heading 3')
+    add_heading(doc, "Biểu đồ: Top 5 Sai sót phổ biến nhất")
     doc.add_picture(img_chart4, width=Inches(6))
 
     # **4th Table: Top 5 Common Mistakes**
-    doc.add_paragraph("\nBảng: Top 5 Sai sót phổ biến nhất\n", style='Heading 3')
+    add_heading(doc, "Bảng: Top 5 Sai sót phổ biến nhất")
     table = doc.add_table(rows=len(top_5_mistakes_percentage) + 1, cols=2)
     table.cell(0, 0).text = "Hạng mục"
     table.cell(0, 1).text = "Tỷ lệ (%)"
